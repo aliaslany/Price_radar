@@ -13,3 +13,7 @@ database_id = "9d9ac072-e952-40bd-ae0d-e10b0f2bc38c"
 # مقادیر محرمانه را با wrangler secret put تنظیم کن، نه اینجا:
 #   wrangler secret put TELEGRAM_BOT_TOKEN
 #   wrangler secret put USD_RATE_API_KEY   (اگر provider نیاز به کلید داشت)
+
+routes = [
+  { pattern = "priceradar.startstar.ir/*", custom_domain = true }
+]
