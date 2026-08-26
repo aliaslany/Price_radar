@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Price Radar؛ دریافت لینک محصول و بررسی قیمت دیجی‌کالا، وضعیت موجودی و تاریخچه قیمت بدون نیاز به تلگرام.">
+  <meta name="theme-color" content="#0b1220">
+  <title>Price Radar | رصد قیمت</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <div class="brand"><span class="logo">🔍</span><div><h1>Price Radar</h1><p>رصد قیمت بدون نیاز به تلگرام</p></div></div>
+      <span class="badge">دیجی‌کالا</span>
+    </header>
+
+    <section class="card search-card">
+      <h2>قیمت محصول را پیدا کن</h2>
+      <p class="muted">لینک صفحه محصول دیجی‌کالا را وارد کن؛ قیمت، موجودی و آخرین به‌روزرسانی نمایش داده می‌شود.</p>
+      <form id="price-form">
+        <label for="url">لینک محصول</label>
+        <div class="input-row">
+          <input id="url" type="url" dir="ltr" autocomplete="off" placeholder="https://www.digikala.com/product/dkp-.../" required>
+          <button type="submit">بررسی قیمت</button>
+        </div>
+      </form>
+      <div class="hint">مثال: لینک محصولی که در دیجی‌کالا با <code>dkp-...</code> شروع می‌شود.</div>
+    </section>
+
+    <section id="status" class="status hidden"></section>
+
+    <section id="result" class="card result-card hidden">
+      <div class="product-head">
+        <div><span id="source" class="source">دیجی‌کالا</span><h2 id="title">—</h2><a id="product-link" target="_blank" rel="noopener">مشاهده محصول ↗</a></div>
+        <span id="availability" class="availability">—</span>
+      </div>
+      <div class="price-box"><span>قیمت فعلی</span><strong id="price">—</strong><small>تومان</small></div>
+      <div class="stats">
+        <div><span>کمترین ثبت‌شده</span><strong id="min-price">—</strong></div>
+        <div><span>بیشترین ثبت‌شده</span><strong id="max-price">—</strong></div>
+        <div><span>آخرین بررسی</span><strong id="updated">—</strong></div>
+      </div>
+      <div class="target-row">
+        <div><label for="target">قیمت هدف</label><p class="muted">اگر قیمت به این مقدار برسد، روی همین مرورگر هشدار می‌گیری.</p></div>
+        <div class="target-input"><input id="target" inputmode="numeric" placeholder="مثلاً ۲۰٬۰۰۰٬۰۰۰"><button id="save-target" type="button">ذخیره</button></div>
+      </div>
+      <div id="history" class="history"></div>
+    </section>
+
+    <footer>Price Radar · ساخته‌شده برای استفاده ساده و سریع</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
