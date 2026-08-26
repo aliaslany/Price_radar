@@ -12,11 +12,17 @@ function ghHeaders(env: Env) {
 }
 
 async function getFile(env: Env, path: string) {
+  if (!env.GITHUB_TOKEN) {
+    throw new Error("GITHUB_TOKEN تنظیم نشده یا خالیه (env.GITHUB_TOKEN undefined)");
+  }
   const res = await fetch(`${API_BASE}/repos/${env.GITHUB_REPO}/contents/${path}`, {
     headers: ghHeaders(env),
   });
   if (!res.ok) {
-    throw new Error(`GitHub getFile ${path} failed: ${res.status}`);
+    const body = await res.text();
+    throw new Error(
+      `GitHub getFile ${path} failed: ${res.status} | repo=${env.GITHUB_REPO} | tokenLen=${env.GITHUB_TOKEN.length} | ${body.slice(0, 200)}`
+    );
   }
   const data: any = await res.json();
   const content = atob(data.content.replace(/\n/g, ""));
