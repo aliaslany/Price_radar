@@ -6,13 +6,11 @@ const resultEl = document.getElementById("result");
 const targetInput = document.getElementById("target");
 let currentProduct = null;
 let pollTimer = null;
-
 const fmt = n => new Intl.NumberFormat("fa-IR").format(Math.round(n));
 const toNumber = value => Number(String(value).replace(/[^0-9]/g, ""));
 function status(text,type=""){statusEl.textContent=text;statusEl.className=`status ${type}`}
 function hideStatus(){statusEl.className="status hidden"}
 function showResult(){resultEl.classList.remove("hidden")}
-
 function render(data){
   currentProduct=data;
   document.getElementById("title").textContent=data.title||"محصول دیجی‌کالا";
@@ -64,6 +62,15 @@ document.getElementById("save-target").addEventListener("click",()=>{
   status(`🎯 قیمت هدف ${fmt(value)} تومان ذخیره شد. این هشدار فقط روی همین مرورگر فعال است.`,"success");
   if("Notification" in window&&Notification.permission==="default")Notification.requestPermission();
 });
+
+// قیمت را هر ۵ دقیقه تازه می‌کنیم؛ منبع اسکرپ فعلی ریپوزیتوری هر ۳۰ دقیقه به‌روزرسانی می‌شود.
+setInterval(async()=>{
+  if(!currentProduct)return;
+  try{
+    const data=await lookup(currentProduct.url,false);
+    if(data.status==="ready") render(data);
+  }catch(_){/* refresh failure should not interrupt the UI */}
+},300000);
 
 setInterval(()=>{
   if(!currentProduct)return;
