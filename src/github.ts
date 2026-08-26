@@ -12,18 +12,9 @@ function ghHeaders(env: Env) {
 }
 
 async function getFile(env: Env, path: string) {
-  if (!env.GITHUB_TOKEN) {
-    throw new Error("GITHUB_TOKEN تنظیم نشده یا خالیه (env.GITHUB_TOKEN undefined)");
-  }
-  const res = await fetch(`${API_BASE}/repos/${env.GITHUB_REPO}/contents/${path}`, {
-    headers: ghHeaders(env),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(
-      `GitHub getFile ${path} failed: ${res.status} | repo=${env.GITHUB_REPO} | tokenLen=${env.GITHUB_TOKEN.length} | ${body.slice(0, 200)}`
-    );
-  }
+  if (!env.GITHUB_TOKEN) throw new Error("GITHUB_TOKEN تنظیم نشده یا خالیه");
+  const res = await fetch(`${API_BASE}/repos/${env.GITHUB_REPO}/contents/${path}`, { headers: ghHeaders(env) });
+  if (!res.ok) throw new Error(`GitHub getFile ${path} failed: ${res.status}`);
   const data: any = await res.json();
   const content = atob(data.content.replace(/\n/g, ""));
   return { content, sha: data.sha as string };
@@ -33,63 +24,34 @@ async function putFile(env: Env, path: string, content: string, sha: string, mes
   const res = await fetch(`${API_BASE}/repos/${env.GITHUB_REPO}/contents/${path}`, {
     method: "PUT",
     headers: ghHeaders(env),
-    body: JSON.stringify({
-      message,
-      content: btoa(content),
-      sha,
-    }),
+    body: JSON.stringify({ message, content: btoa(content), sha }),
   });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`GitHub putFile ${path} failed: ${res.status} ${body}`);
-  }
+  if (!res.ok) throw new Error(`GitHub putFile ${path} failed: ${res.status}`);
 }
 
-export async function addUrlToWatchlist(env: Env, id: string, url: string, title: string) {
+export async function addUrlToWatchlist(env: Env, id: string, url: string, title: string): Promise<boolean> {
   const { content, sha } = await getFile(env, "watchlist.json");
   const list: { id: string; url: string; title: string }[] = JSON.parse(content);
-
-  if (list.some((p) => p.id === id)) {
-    return; // قبلاً اضافه شده
-  }
-
+  if (list.some((p) => p.id === id)) return false;
   list.push({ id, url, title });
   await putFile(env, "watchlist.json", JSON.stringify(list, null, 2), sha, `add product ${id}`);
+  return true;
 }
 
 export async function triggerScrapeWorkflow(env: Env) {
-  const res = await fetch(
-    `${API_BASE}/repos/${env.GITHUB_REPO}/actions/workflows/scrape.yml/dispatches`,
-    {
-      method: "POST",
-      headers: ghHeaders(env),
-      body: JSON.stringify({ ref: "main" }),
-    }
-  );
-  if (!res.ok) {
-    console.log("workflow dispatch failed:", res.status, await res.text());
-  }
+  const res = await fetch(`${API_BASE}/repos/${env.GITHUB_REPO}/actions/workflows/scrape.yml/dispatches`, {
+    method: "POST",
+    headers: ghHeaders(env),
+    body: JSON.stringify({ ref: "main" }),
+  });
+  if (!res.ok) console.log("workflow dispatch failed:", res.status, await res.text());
 }
 
 export async function fetchLatestPrices(env: Env) {
-  // raw.githubusercontent.com کمی کش می‌شود (چند دقیقه)؛ برای این پروژه مشکلی نیست
-  const res = await fetch(
-    `https://raw.githubusercontent.com/${env.GITHUB_REPO}/main/prices.json`,
-    { cf: { cacheTtl: 0 } as any }
-  );
-  if (!res.ok) {
-    throw new Error(`fetch prices.json failed: ${res.status}`);
-  }
+  const res = await fetch(`https://raw.githubusercontent.com/${env.GITHUB_REPO}/main/prices.json`, { cf: { cacheTtl: 0 } as any });
+  if (!res.ok) throw new Error(`fetch prices.json failed: ${res.status}`);
   return res.json() as Promise<{
     updatedAt: string;
-    products: {
-      id: string;
-      url: string;
-      title: string;
-      price?: number;
-      available?: boolean;
-      source?: string;
-      error: string | null;
-    }[];
+    products: { id: string; url: string; title: string; price?: number; available?: boolean; source?: string; error: string | null }[];
   }>;
 }
