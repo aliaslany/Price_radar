@@ -26,13 +26,20 @@ export const digikalaScraper: Scraper = {
     }
 
     const res = await fetch(`${API_BASE}/${productId}/`, {
+      redirect: "manual", // برای دیدن اینکه دقیقاً کجا ریدایرکت می‌شویم (احتمالاً صفحه چالش/بلاک است)
       headers: {
-        // بدون User-Agent مرورگر معمولاً ۴۰۳ برمی‌گردد
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
         Accept: "application/json",
+        "Accept-Language": "fa-IR,fa;q=0.9",
+        Referer: "https://www.digikala.com/",
       },
     });
+
+    if (res.status === 0 || (res.status >= 300 && res.status < 400)) {
+      const loc = res.headers.get("location");
+      throw new Error(`دیجی‌کالا ریدایرکت کرد به: ${loc} (احتمالاً صفحه چالش/بلاک آی‌پی Cloudflare Workers است)`);
+    }
 
     if (!res.ok) {
       throw new Error(`دیجی‌کالا وضعیت ${res.status} برگرداند`);
