@@ -1,0 +1,30 @@
+name: Scrape Prices
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}   # این بخش اجازه می‌ده Worker با API درخواست اجرای فوری بده
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run scraper
+        run: node scripts/scrape.js
+
+      - name: Commit results
+        run: |
+          git config user.name "price-radar-bot"
+          git config user.email "actions@github.com"
+          git add prices.json
+          git diff --quiet --cached || git commit -m "chore: update prices [skip ci]"
+          git push
