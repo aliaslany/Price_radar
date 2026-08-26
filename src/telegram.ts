@@ -1,12 +1,10 @@
 import type { Env } from "./types";
-import { digikalaScraper } from "./scrapers/digikala";
-import { upsertProduct, insertPrice, getLatestUsdRate, getPriceHistory, addWatch } from "./db";
-import { isGreatDeal, average } from "./calc";
+import { addWatch } from "./db";
+import { addUrlToWatchlist, triggerScrapeWorkflow } from "./github";
 
-const scrapers = [digikalaScraper]; // برای اضافه‌کردن فروشگاه جدید فقط اینجا اضافه کن
-
-function findScraper(url: string) {
-  return scrapers.find((s) => s.matches(url)) ?? null;
+function extractDigikalaId(url: string): string | null {
+  const match = url.match(/dkp-(\d+)/i);
+  return match ? match[1] : null;
 }
 
 export async function sendMessage(env: Env, chatId: number, text: string) {
@@ -32,7 +30,7 @@ export async function handleUpdate(env: Env, update: any) {
     await sendMessage(
       env,
       chatId,
-      "🔍 *Price Radar*\n\nلینک محصول یکی از فروشگاه‌های پشتیبانی‌شده رو بفرست تا قیمتش رو رصد کنم.\n\nفعلاً پشتیبانی می‌شه: دیجی‌کالا"
+      "🔍 *Price Radar*\n\nلینک محصول دیجی‌کالا رو بفرست تا قیمتش رو رصد کنم.\n\n⏱ چون قیمت‌گیری از طریق GitHub Actions انجام می‌شه، اولین نتیجه معمولاً کمتر از یک دقیقه طول می‌کشه، نه آنی."
     );
     return;
   }
@@ -57,35 +55,30 @@ export async function handleUpdate(env: Env, update: any) {
   }
 
   const url = urlMatch[0];
-  const scraper = findScraper(url);
-  if (!scraper) {
+  if (!url.includes("digikala.com")) {
     await sendMessage(env, chatId, "این فروشگاه فعلاً پشتیبانی نمی‌شه. فعلاً فقط دیجی‌کالا 🙏");
     return;
   }
 
+  const productId = extractDigikalaId(url);
+  if (!productId) {
+    await sendMessage(env, chatId, "شناسه محصول رو از این لینک پیدا نکردم. مطمئن شو لینک صفحه محصول (dkp-...) باشه.");
+    return;
+  }
+
+  const id = `digikala:${productId}`;
+
   try {
-    const product = await scraper.getProduct(url);
-    await upsertProduct(env, product);
-    await insertPrice(env, product.id, product.price, product.available);
-
-    const history = await getPriceHistory(env, product.id, 30);
-    const lowest = history.length ? Math.min(...history.map((h) => h.price)) : product.price;
-    const sevenDayAvg = history.length ? average(history.map((h) => h.price)) : product.price;
-
-    let dealLine = "";
-    if (isGreatDeal(product.price, sevenDayAvg)) {
-      dealLine = "\n\n🟢 *قیمت بسیار خوب* - قیمت فعلی حدود ۸٪ یا بیشتر پایین‌تر از میانگین اخیر است.";
-    }
+    await addUrlToWatchlist(env, id, url, "");
+    await addWatch(env, chatId, id, null);
+    await triggerScrapeWorkflow(env);
 
     await sendMessage(
       env,
       chatId,
-      `📱 *${product.title}*\n\n💰 قیمت فعلی: ${fmt(product.price)} تومان\n📉 کمترین قیمت ثبت‌شده: ${fmt(lowest)} تومان${dealLine}\n\n🔔 می‌خوای وقتی قیمت افت کرد خبرت کنم؟ برای هدف‌گذاری قیمت مشخص بنویس:\n/target ${product.id.split(":")[1]} 30000000`
+      `✅ اضافه شد به رصد.\n\n⏱ تا حدود یک دقیقه دیگه اولین قیمت رو برات می‌فرستم، و از این به بعد هر ۳۰ دقیقه چک می‌شه.\n\nبرای هدف‌گذاری قیمت مشخص:\n/target ${productId} 30000000`
     );
-
-    // با ارسال لینک به‌صورت پیش‌فرض روی رصد ساده (بدون قیمت هدف) قرار می‌گیره
-    await addWatch(env, chatId, product.id, null);
   } catch (err: any) {
-    await sendMessage(env, chatId, `⚠️ نشد قیمت رو بگیرم: ${err.message ?? err}`);
+    await sendMessage(env, chatId, `⚠️ نشد به لیست رصد اضافه کنم: ${err.message ?? err}`);
   }
 }

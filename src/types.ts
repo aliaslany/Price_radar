@@ -2,6 +2,8 @@ export interface Env {
   DB: D1Database;
   TELEGRAM_BOT_TOKEN: string;
   USD_RATE_API_KEY?: string;
+  GITHUB_TOKEN: string;   // fine-grained PAT, فقط دسترسی contents:write + actions:write روی همین ریپو
+  GITHUB_REPO: string;    // مثلاً "aliaslany/price_radar"
 }
 
 export interface ScrapedProduct {
