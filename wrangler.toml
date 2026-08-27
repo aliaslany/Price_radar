@@ -2,6 +2,10 @@ name = "price-radar"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
 
+routes = [
+  { pattern = "priceradar.startstar.ir/*", custom_domain = true }
+]
+
 [triggers]
 crons = ["*/5 * * * *"]  # فقط prices.json رو از گیت‌هاب می‌خونه، پس ارزونه؛ هر ۵ دقیقه چک می‌کنه
 
@@ -11,13 +15,9 @@ database_name = "price-radar-db"
 database_id = "9d9ac072-e952-40bd-ae0d-e10b0f2bc38c"
 
 [vars]
-GITHUB_REPO = "aliaslany/price_radar"
+GITHUB_REPO = "aliaslany/Price_radar"
 
-routes = [
-  { pattern = "priceradar.startstar.ir/*", custom_domain = true }
-]
-
-# مقادیر محرمانه را با wrangler secret put تنظیم کن، نه اینجا:
-#   wrangler secret put TELEGRAM_BOT_TOKEN
-#   wrangler secret put USD_RATE_API_KEY
-#   wrangler secret put GITHUB_TOKEN     (fine-grained PAT: Contents=Read&Write, Actions=Read&Write, فقط روی ریپوی price_radar)
+# مقادیر محرمانه را با wrangler secret put یا Dashboard تنظیم کن، نه اینجا:
+#   TELEGRAM_BOT_TOKEN
+#   USD_RATE_API_KEY
+#   GITHUB_TOKEN   (fine-grained PAT: Contents=Read&Write, Actions=Read&Write, فقط روی ریپوی Price_radar)
