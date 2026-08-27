@@ -71,3 +71,47 @@ export async function getWatchersForProduct(env: Env, productId: string) {
     .all<{ chat_id: number; target_price: number | null }>();
   return results;
 }
+export async function savePushSubscription(env: Env, sub: { endpoint: string; keys: { p256dh: string; auth: string } }) {
+  await env.DB.prepare(
+    `INSERT INTO push_subscriptions (endpoint, p256dh, auth)
+     VALUES (?, ?, ?)
+     ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth`
+  )
+    .bind(sub.endpoint, sub.keys.p256dh, sub.keys.auth)
+    .run();
+}
+
+export async function removePushSubscription(env: Env, endpoint: string) {
+  await env.DB.prepare(`DELETE FROM push_subscriptions WHERE endpoint = ?`).bind(endpoint).run();
+  await env.DB.prepare(`DELETE FROM web_watchlist WHERE endpoint = ?`).bind(endpoint).run();
+}
+
+export async function addWebWatch(env: Env, endpoint: string, productId: string, targetPrice: number | null) {
+  await env.DB.prepare(
+    `INSERT INTO web_watchlist (endpoint, product_id, target_price)
+     VALUES (?, ?, ?)
+     ON CONFLICT(endpoint, product_id) DO UPDATE SET target_price = excluded.target_price`
+  )
+    .bind(endpoint, productId, targetPrice)
+    .run();
+}
+
+export async function getWebWatchersForProduct(env: Env, productId: string) {
+  const { results } = await env.DB.prepare(
+    `SELECT w.endpoint, w.target_price, w.last_notified_price, s.p256dh, s.auth
+     FROM web_watchlist w
+     JOIN push_subscriptions s ON s.endpoint = w.endpoint
+     WHERE w.product_id = ?`
+  )
+    .bind(productId)
+    .all<{ endpoint: string; target_price: number | null; last_notified_price: number | null; p256dh: string; auth: string }>();
+  return results;
+}
+
+export async function updateLastNotifiedPrice(env: Env, endpoint: string, productId: string, price: number) {
+  await env.DB.prepare(
+    `UPDATE web_watchlist SET last_notified_price = ? WHERE endpoint = ? AND product_id = ?`
+  )
+    .bind(price, endpoint, productId)
+    .run();
+}
