@@ -1,11 +1,11 @@
 {
-  "updatedAt": "2026-10-18T18:47:15.954Z",
+  "updatedAt": "2026-10-18T21:18:03.321Z",
   "products": [
     {
       "id": "digikala:15507323",
       "url": "https://www.digikala.com/product/dkp-15507323/",
       "title": "",
-      "error": "fetch failed: fetch failed"
+      "error": "fetch failed: This operation was aborted"
     },
     {
       "id": "digikala:646752",
